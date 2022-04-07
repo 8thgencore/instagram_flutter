@@ -89,18 +89,14 @@ class _SignupScreenState extends State<SignupScreen> {
             children: [
               Flexible(child: Container(), flex: 1),
               // svg image
-              SvgPicture.asset(AppImages().logo, color: primaryColor, height: 64),
+              SvgPicture.asset(logo, color: primaryColor, height: 64),
               const SizedBox(height: 64),
               // circular widget to accept and show our selected file
               Stack(
                 children: [
                   _image != null
                       ? CircleAvatar(radius: 64, backgroundImage: MemoryImage(_image!))
-                      : CircleAvatar(
-                          radius: 64,
-                          backgroundImage: AssetImage(
-                            AppImages().defaultProfile,
-                          )),
+                      : CircleAvatar(radius: 64, backgroundImage: AssetImage(defaultProfile)),
                   Positioned(
                     bottom: -10,
                     left: 80,
