@@ -1,7 +1,13 @@
+import 'dart:ui';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:instagram_flutter/models/user.dart';
 import 'package:instagram_flutter/providers/user_provider.dart';
 import 'package:instagram_flutter/resources/firestore_methods.dart';
+import 'package:instagram_flutter/screens/comments_screen.dart';
 import 'package:instagram_flutter/utils/colors.dart';
+import 'package:instagram_flutter/utils/utils.dart';
 import 'package:instagram_flutter/widgets/like_animation.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -9,10 +15,7 @@ import 'package:provider/provider.dart';
 class PostCard extends StatelessWidget {
   final snap;
 
-  const PostCard({
-    Key? key,
-    required this.snap,
-  }) : super(key: key);
+  const PostCard({Key? key, required this.snap}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -96,10 +99,7 @@ class HeaderSectionWidget extends StatelessWidget {
 class ImageWidget extends StatefulWidget {
   final snap;
 
-  const ImageWidget({
-    Key? key,
-    required this.snap,
-  }) : super(key: key);
+  const ImageWidget({Key? key, required this.snap}) : super(key: key);
 
   @override
   State<ImageWidget> createState() => _ImageWidgetState();
@@ -110,13 +110,13 @@ class _ImageWidgetState extends State<ImageWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final UserProvider userProvider = Provider.of<UserProvider>(context);
+    final User user = Provider.of<UserProvider>(context).getUser;
 
     return GestureDetector(
       onDoubleTap: () {
         FirestoreMethods().likePost(
           widget.snap['postId'].toString(),
-          userProvider.getUser.uid,
+          user.uid,
           widget.snap['likes'],
         );
         setState(() => isLikeAnimating = true);
@@ -127,24 +127,15 @@ class _ImageWidgetState extends State<ImageWidget> {
           SizedBox(
             height: MediaQuery.of(context).size.height * 0.35,
             width: double.infinity,
-            child: Image.network(
-              widget.snap['postUrl'],
-              fit: BoxFit.cover,
-            ),
+            child: Image.network(widget.snap['postUrl'], fit: BoxFit.cover),
           ),
           AnimatedOpacity(
             duration: const Duration(milliseconds: 200),
             opacity: isLikeAnimating ? 1 : 0,
             child: LikeAnimation(
               isAnimating: isLikeAnimating,
-              child: const Icon(
-                Icons.favorite,
-                color: Colors.white,
-                size: 100,
-              ),
-              duration: const Duration(
-                milliseconds: 400,
-              ),
+              child: const Icon(Icons.favorite, color: Colors.white, size: 100),
+              duration: const Duration(milliseconds: 400),
               onEnd: () {
                 setState(() => isLikeAnimating = false);
               },
@@ -156,13 +147,37 @@ class _ImageWidgetState extends State<ImageWidget> {
   }
 }
 
-class DescriptionWidget extends StatelessWidget {
+class DescriptionWidget extends StatefulWidget {
   final snap;
 
-  const DescriptionWidget({
-    Key? key,
-    required this.snap,
-  }) : super(key: key);
+  const DescriptionWidget({Key? key, required this.snap}) : super(key: key);
+
+  @override
+  State<DescriptionWidget> createState() => _DescriptionWidgetState();
+}
+
+class _DescriptionWidgetState extends State<DescriptionWidget> {
+  int commentLen = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    getComments();
+  }
+
+  void getComments() async {
+    try {
+      QuerySnapshot snap = await FirebaseFirestore.instance
+          .collection('posts')
+          .doc(widget.snap['postId'])
+          .collection('comments')
+          .get();
+      commentLen = snap.docs.length;
+    } catch (err) {
+      showSnackBar(context, err.toString());
+    }
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -177,7 +192,7 @@ class DescriptionWidget extends StatelessWidget {
                   fontWeight: FontWeight.w800,
                 ),
             child: Text(
-              "${snap['likes'].length} likes",
+              "${widget.snap['likes'].length} likes",
               style: Theme.of(context).textTheme.bodyText2,
             ),
           ),
@@ -189,20 +204,24 @@ class DescriptionWidget extends StatelessWidget {
                 style: const TextStyle(color: primaryColor),
                 children: [
                   TextSpan(
-                    text: snap['username'],
+                    text: widget.snap['username'],
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  TextSpan(text: snap['description']),
+                  TextSpan(text: widget.snap['description']),
                 ],
               ),
             ),
           ),
           InkWell(
-            onTap: () {},
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => CommentsScreen(postId: widget.snap['postId'].toString()),
+              ),
+            ),
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Text(
-                "View all 200 comments",
+                "View all $commentLen comments",
                 style: const TextStyle(fontSize: 16, color: secondaryColor),
               ),
             ),
@@ -210,7 +229,7 @@ class DescriptionWidget extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Text(
-              DateFormat.yMMMd().format(snap['datePublished'].toDate()),
+              DateFormat.yMMMd().format(widget.snap['datePublished'].toDate()),
               style: const TextStyle(fontSize: 16, color: secondaryColor),
             ),
           ),
@@ -220,41 +239,40 @@ class DescriptionWidget extends StatelessWidget {
   }
 }
 
-class BorderSectionWidget extends StatelessWidget {
+class BorderSectionWidget extends StatefulWidget {
   final snap;
 
-  const BorderSectionWidget({
-    Key? key,
-    required this.snap,
-  }) : super(key: key);
+  const BorderSectionWidget({Key? key, required this.snap}) : super(key: key);
 
   @override
+  State<BorderSectionWidget> createState() => _BorderSectionWidgetState();
+}
+
+class _BorderSectionWidgetState extends State<BorderSectionWidget> {
+  @override
   Widget build(BuildContext context) {
-    final UserProvider userProvider = Provider.of<UserProvider>(context);
+    final User user = Provider.of<UserProvider>(context).getUser;
 
     return Row(
       children: [
         LikeAnimation(
-          isAnimating: snap['likes'].contains(userProvider.getUser.uid),
+          isAnimating: widget.snap['likes'].contains(user.uid),
           smallLike: true,
           child: IconButton(
-            icon: snap['likes'].contains(userProvider.getUser.uid)
-                ? const Icon(
-                    Icons.favorite,
-                    color: Colors.red,
-                  )
-                : const Icon(
-                    Icons.favorite_border,
-                  ),
+            icon: widget.snap['likes'].contains(user.uid)
+                ? const Icon(Icons.favorite, color: Colors.red)
+                : const Icon(Icons.favorite_border),
             onPressed: () => FirestoreMethods().likePost(
-              snap['postId'],
-              userProvider.getUser.uid,
-              snap['likes'],
+              widget.snap['postId'],
+              user.uid,
+              widget.snap['likes'],
             ),
           ),
         ),
         IconButton(
-          onPressed: () {},
+          onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+            builder: (context) => CommentsScreen(postId: widget.snap['postId'].toString()),
+          )),
           icon: const Icon(Icons.comment_outlined),
         ),
         IconButton(
