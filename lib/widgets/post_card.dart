@@ -34,7 +34,7 @@ class PostCard extends StatelessWidget {
   }
 }
 
-class HeaderSectionWidget extends StatelessWidget {
+class HeaderSectionWidget extends StatefulWidget {
   final snap;
 
   const HeaderSectionWidget({
@@ -43,14 +43,21 @@ class HeaderSectionWidget extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  State<HeaderSectionWidget> createState() => _HeaderSectionWidgetState();
+}
+
+class _HeaderSectionWidgetState extends State<HeaderSectionWidget> {
+  @override
   Widget build(BuildContext context) {
+    final User user = Provider.of<UserProvider>(context).getUser;
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 16).copyWith(right: 0),
       child: Row(
         children: [
           CircleAvatar(
             radius: 16,
-            backgroundImage: NetworkImage(snap['profImage']),
+            backgroundImage: NetworkImage(widget.snap['profImage']),
           ),
           Expanded(
             child: Padding(
@@ -59,37 +66,44 @@ class HeaderSectionWidget extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(snap['username'], style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text(widget.snap['username'], style: TextStyle(fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
           ),
-          IconButton(
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => Dialog(
-                  child: ListView(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shrinkWrap: true,
-                    children: [
-                      'Delete',
-                    ]
-                        .map(
-                          (e) => InkWell(
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                              child: Text(e),
-                            ),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ),
-              );
-            },
-            icon: const Icon(Icons.more_vert),
-          ),
+          widget.snap['uid'].toString() == user.uid
+              ? IconButton(
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => Dialog(
+                        child: ListView(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shrinkWrap: true,
+                          children: [
+                            'Delete',
+                          ]
+                              .map(
+                                (e) => InkWell(
+                                  onTap: () async {
+                                    FirestoreMethods().deletePost(widget.snap['postId']);
+                                    Navigator.of(context).pop();
+                                  },
+                                  child: Container(
+                                    padding:
+                                        const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                                    child: Text(e),
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                        ),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.more_vert),
+                )
+              : Container(height: 40),
         ],
       ),
     );

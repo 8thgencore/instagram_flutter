@@ -16,6 +16,8 @@ class FeedScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: mobileBackgroundColor,
         centerTitle: false,
+        elevation: 1,
+        shadowColor: Colors.white30,
         title: SvgPicture.asset(logo, color: primaryColor, height: 32),
         actions: [
           IconButton(
