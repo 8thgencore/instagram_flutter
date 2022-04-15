@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:instagram_flutter/screens/profile_screen.dart';
 import 'package:instagram_flutter/utils/colors.dart';
 import 'package:instagram_flutter/utils/global_variable.dart';
 
@@ -35,7 +36,6 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
           onFieldSubmitted: (String _) {
             setState(() => isShowUsers = true);
-            print(_);
           },
         ),
       ),
@@ -104,13 +104,13 @@ class SearchUserWidget extends StatelessWidget {
             itemCount: users.docs.length,
             itemBuilder: (context, index) {
               return InkWell(
-                // onTap: () => Navigator.of(context).push(
-                //   MaterialPageRoute(
-                //     builder: (context) => ProfileScreen(
-                //       uid: (snapshot.data! as dynamic).docs[index]['uid'],
-                //     ),
-                //   ),
-                // ),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => ProfileScreen(
+                      uid: (snapshot.data! as dynamic).docs[index]['uid'],
+                    ),
+                  ),
+                ),
                 child: ListTile(
                   leading: CircleAvatar(
                     backgroundImage: NetworkImage(users.docs[index]['photoUrl']),

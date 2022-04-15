@@ -50,6 +50,10 @@ class _SignupScreenState extends State<SignupScreen> {
     setState(() => _isLoading = true);
 
     // signup user using our authmethods
+    if (_image == null) {
+      setState(() => _isLoading = false);
+      return showSnackBar(context, "Not select image");
+    }
     String res = await AuthMethods().signUpUser(
         email: _emailController.text,
         password: _passwordController.text,
