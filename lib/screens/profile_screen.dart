@@ -24,7 +24,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   int following = 0;
   bool isFollowing = false;
   bool isLoading = false;
-  String friendUid = FirebaseAuth.instance.currentUser!.uid;
+  String currentUserUid = FirebaseAuth.instance.currentUser!.uid;
+  String profileUid = "";
 
   @override
   void initState() {
@@ -34,20 +35,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   getData() async {
     setState(() => isLoading = true);
+
+    if (widget.uid == "current") {
+      profileUid = currentUserUid;
+    } else {
+      profileUid = widget.uid;
+    }
+
     try {
-      var userSnap = await FirebaseFirestore.instance.collection('users').doc(widget.uid).get();
+      var userSnap = await FirebaseFirestore.instance.collection('users').doc(profileUid).get();
 
       // get post length
       var postSnap = await FirebaseFirestore.instance
           .collection('posts')
-          .where('uid', isEqualTo: friendUid)
+          .where('uid', isEqualTo: currentUserUid)
           .get();
 
       postLen = postSnap.docs.length;
       userData = userSnap.data()!;
       followers = userSnap.data()!['followers'].length;
       following = userSnap.data()!['following'].length;
-      isFollowing = userSnap.data()!['followers'].contains(friendUid);
+      isFollowing = userSnap.data()!['followers'].contains(currentUserUid);
       setState(() {});
     } catch (e) {
       showSnackBar(context, e.toString());
@@ -57,8 +65,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print("friendUid $friendUid");
-    print("widget.uid ${widget.uid}");
+    print("friendUid $currentUserUid");
+    print("widget.uid ${profileUid}");
 
     return isLoading
         ? const Center(
@@ -99,7 +107,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                   children: [
-                                    friendUid == widget.uid
+                                    currentUserUid == profileUid
                                         ? FollowButton(
                                             text: 'Sign Out',
                                             backgroundColor: mobileBackgroundColor,
@@ -122,7 +130,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                                 borderColor: Colors.grey,
                                                 function: () async {
                                                   await FirestoreMethods().followUser(
-                                                    friendUid,
+                                                    currentUserUid,
                                                     userData['uid'],
                                                   );
                                                   setState(() {
@@ -138,7 +146,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                                 borderColor: Colors.blue,
                                                 function: () async {
                                                   await FirestoreMethods().followUser(
-                                                    friendUid,
+                                                    currentUserUid,
                                                     userData['uid'],
                                                   );
                                                   setState(() {
