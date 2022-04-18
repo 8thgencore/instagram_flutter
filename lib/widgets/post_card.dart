@@ -9,6 +9,7 @@ import 'package:instagram_flutter/screens/comments_screen.dart';
 import 'package:instagram_flutter/utils/colors.dart';
 import 'package:instagram_flutter/utils/global_variable.dart';
 import 'package:instagram_flutter/utils/utils.dart';
+import 'package:instagram_flutter/widgets/dialog_button.dart';
 import 'package:instagram_flutter/widgets/like_animation.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -22,7 +23,7 @@ class PostCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         border: Border.all(
           color: width > webScreenSize ? webBackgroundColor : mobileBackgroundColor,
@@ -58,7 +59,7 @@ class _HeaderSectionWidgetState extends State<HeaderSectionWidget> {
     final User user = Provider.of<UserProvider>(context).getUser;
 
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 16).copyWith(right: 0),
+      padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 16).copyWith(right: 0),
       child: Row(
         children: [
           CircleAvatar(
@@ -72,7 +73,10 @@ class _HeaderSectionWidgetState extends State<HeaderSectionWidget> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(widget.snap['username'], style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text(
+                    widget.snap['username'],
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ],
               ),
             ),
@@ -87,29 +91,21 @@ class _HeaderSectionWidgetState extends State<HeaderSectionWidget> {
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shrinkWrap: true,
                           children: [
-                            'Delete',
-                          ]
-                              .map(
-                                (e) => InkWell(
-                                  onTap: () async {
-                                    FirestoreMethods().deletePost(widget.snap['postId']);
-                                    Navigator.of(context).pop();
-                                  },
-                                  child: Container(
-                                    padding:
-                                        const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                                    child: Text(e),
-                                  ),
-                                ),
-                              )
-                              .toList(),
+                            DialogButton(
+                              onTap: () async {
+                                FirestoreMethods().deletePost(widget.snap['postId']);
+                                Navigator.of(context).pop();
+                              },
+                              text: 'Delete',
+                            ),
+                          ],
                         ),
                       ),
                     );
                   },
                   icon: const Icon(Icons.more_vert),
                 )
-              : Container(height: 40),
+              : Container(height: 50),
         ],
       ),
     );
@@ -242,7 +238,7 @@ class _DescriptionWidgetState extends State<DescriptionWidget> {
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Text(
                 "View all $commentLen comments",
-                style: const TextStyle(fontSize: 16, color: secondaryColor),
+                style: const TextStyle(fontSize: 14, color: secondaryColor),
               ),
             ),
           ),
@@ -250,7 +246,7 @@ class _DescriptionWidgetState extends State<DescriptionWidget> {
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Text(
               DateFormat.yMMMd().format(widget.snap['datePublished'].toDate()),
-              style: const TextStyle(fontSize: 16, color: secondaryColor),
+              style: const TextStyle(fontSize: 12, color: secondaryColor),
             ),
           ),
         ],

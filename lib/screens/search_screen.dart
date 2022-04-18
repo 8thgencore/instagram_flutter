@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:instagram_flutter/screens/post_screen.dart';
 import 'package:instagram_flutter/screens/profile_screen.dart';
 import 'package:instagram_flutter/utils/colors.dart';
 import 'package:instagram_flutter/utils/global_variable.dart';
@@ -63,10 +64,23 @@ class ImageGridWidget extends StatelessWidget {
         return StaggeredGridView.countBuilder(
           crossAxisCount: 3,
           itemCount: posts.docs.length,
-          itemBuilder: (context, index) => Image.network(
-            posts.docs[index]['postUrl'],
-            fit: BoxFit.cover,
-          ),
+          itemBuilder: (context, index) {
+            return GestureDetector(
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) {
+                      return PostScreen(post: posts.docs[index]);
+                    },
+                  ),
+                );
+              },
+              child: Image.network(
+                posts.docs[index]['postUrl'],
+                fit: BoxFit.cover,
+              ),
+            );
+          },
           staggeredTileBuilder: (index) => MediaQuery.of(context).size.width > webScreenSize
               ? StaggeredTile.count((index % 7 == 0) ? 1 : 1, (index % 7 == 0) ? 1 : 1)
               : StaggeredTile.count((index % 7 == 0) ? 2 : 1, (index % 7 == 0) ? 2 : 1),
@@ -93,6 +107,7 @@ class SearchUserWidget extends StatelessWidget {
         future: FirebaseFirestore.instance
             .collection('users')
             .where('username', isGreaterThanOrEqualTo: searchController.text)
+            .orderBy('datePublished', descending: true)
             .get(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {

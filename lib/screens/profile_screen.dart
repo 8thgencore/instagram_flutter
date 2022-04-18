@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:instagram_flutter/resources/auth_methods.dart';
 import 'package:instagram_flutter/resources/firestore_methods.dart';
 import 'package:instagram_flutter/screens/login_screen.dart';
+import 'package:instagram_flutter/screens/post_screen.dart';
 import 'package:instagram_flutter/utils/colors.dart';
 import 'package:instagram_flutter/utils/utils.dart';
 import 'package:instagram_flutter/widgets/follow_button.dart';
@@ -48,9 +49,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       // get post length
       var postSnap = await FirebaseFirestore.instance
           .collection('posts')
-          .where('uid', isEqualTo: currentUserUid)
+          .where('uid', isEqualTo: profileUid)
           .get();
-
       postLen = postSnap.docs.length;
       userData = userSnap.data()!;
       followers = userSnap.data()!['followers'].length;
@@ -65,9 +65,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print("friendUid $currentUserUid");
-    print("widget.uid ${profileUid}");
-
     return isLoading
         ? const Center(
             child: CircularProgressIndicator(),
@@ -91,6 +88,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             backgroundImage: NetworkImage(userData['photoUrl']),
                             radius: 40,
                           ),
+                          const SizedBox(width: 20),
                           Expanded(
                             flex: 1,
                             child: Column(
@@ -179,7 +177,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
                 const Divider(),
-                ImageGridWidget(widget: widget)
+                ImageGridWidget(uid: profileUid),
               ],
             ),
           );
@@ -187,15 +185,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
 }
 
 class ImageGridWidget extends StatelessWidget {
-  const ImageGridWidget({Key? key, required this.widget}) : super(key: key);
+  const ImageGridWidget({Key? key, required this.uid}) : super(key: key);
 
-  final ProfileScreen widget;
+  final String uid;
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-      future:
-          FirebaseFirestore.instance.collection('posts').where('uid', isEqualTo: widget.uid).get(),
+      future: FirebaseFirestore.instance
+          .collection('posts')
+          .where('uid', isEqualTo: uid)
+          .orderBy('datePublished', descending: true)
+          .get(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -210,8 +211,19 @@ class ImageGridWidget extends StatelessWidget {
             childAspectRatio: 1,
           ),
           itemBuilder: (context, index) {
-            DocumentSnapshot snap = (snapshot.data! as dynamic).docs[index];
-            return Image(image: NetworkImage(snap['postUrl']), fit: BoxFit.cover);
+            var post = (snapshot.data! as dynamic).docs[index];
+            return GestureDetector(
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) {
+                      return PostScreen(post: post);
+                    },
+                  ),
+                );
+              },
+              child: Image(image: NetworkImage(post['postUrl']), fit: BoxFit.cover),
+            );
           },
         );
       },
