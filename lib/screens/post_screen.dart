@@ -7,6 +7,7 @@ class PostScreen extends StatelessWidget {
 
   const PostScreen({Key? key, this.post}) : super(key: key);
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

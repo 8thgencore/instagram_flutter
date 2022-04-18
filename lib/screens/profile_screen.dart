@@ -206,8 +206,8 @@ class ImageGridWidget extends StatelessWidget {
           itemCount: (snapshot.data! as dynamic).docs.length,
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 3,
-            crossAxisSpacing: 5,
-            mainAxisSpacing: 1.5,
+            crossAxisSpacing: 3,
+            mainAxisSpacing: 3,
             childAspectRatio: 1,
           ),
           itemBuilder: (context, index) {

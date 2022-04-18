@@ -84,8 +84,8 @@ class ImageGridWidget extends StatelessWidget {
           staggeredTileBuilder: (index) => MediaQuery.of(context).size.width > webScreenSize
               ? StaggeredTile.count((index % 7 == 0) ? 1 : 1, (index % 7 == 0) ? 1 : 1)
               : StaggeredTile.count((index % 7 == 0) ? 2 : 1, (index % 7 == 0) ? 2 : 1),
-          mainAxisSpacing: 8.0,
-          crossAxisSpacing: 8.0,
+          mainAxisSpacing: 5.0,
+          crossAxisSpacing: 5.0,
         );
       },
     );
@@ -102,42 +102,39 @@ class SearchUserWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      child: FutureBuilder(
-        future: FirebaseFirestore.instance
-            .collection('users')
-            .where('username', isGreaterThanOrEqualTo: searchController.text)
-            .orderBy('datePublished', descending: true)
-            .get(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          var users = snapshot.data! as dynamic;
-          return ListView.builder(
-            // shrinkWrap: true,
-            itemCount: users.docs.length,
-            itemBuilder: (context, index) {
-              return InkWell(
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => ProfileScreen(
-                      uid: (snapshot.data! as dynamic).docs[index]['uid'],
-                    ),
+    return FutureBuilder(
+      future: FirebaseFirestore.instance
+          .collection('users')
+          .where('username', isGreaterThanOrEqualTo: searchController.text)
+          .get(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        var users = snapshot.data! as dynamic;
+        return ListView.builder(
+          // shrinkWrap: true,
+          itemCount: users.docs.length,
+          itemBuilder: (context, index) {
+            return InkWell(
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => ProfileScreen(
+                    uid: (snapshot.data! as dynamic).docs[index]['uid'],
                   ),
                 ),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundImage: NetworkImage(users.docs[index]['photoUrl']),
-                    radius: 16,
-                  ),
-                  title: Text(users.docs[index]['username']),
+              ),
+              child: ListTile(
+                leading: CircleAvatar(
+                  backgroundImage: NetworkImage(users.docs[index]['photoUrl']),
+                  radius: 16,
                 ),
-              );
-            },
-          );
-        },
-      ),
+                title: Text(users.docs[index]['username']),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }
