@@ -8,6 +8,7 @@ import 'package:instagram_flutter/screens/post_screen.dart';
 import 'package:instagram_flutter/utils/colors.dart';
 import 'package:instagram_flutter/utils/utils.dart';
 import 'package:instagram_flutter/widgets/follow_button.dart';
+import 'package:instagram_flutter/widgets/users_list_widget.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String uid;
@@ -21,8 +22,8 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   var userData = {};
   int postLen = 0;
-  int followers = 0;
-  int following = 0;
+  List<dynamic> followers = [];
+  List<dynamic> following = [];
   bool isFollowing = false;
   bool isLoading = false;
   String currentUserUid = FirebaseAuth.instance.currentUser!.uid;
@@ -53,8 +54,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           .get();
       postLen = postSnap.docs.length;
       userData = userSnap.data()!;
-      followers = userSnap.data()!['followers'].length;
-      following = userSnap.data()!['following'].length;
+      followers = userSnap.data()!['followers'];
+      following = userSnap.data()!['following'];
       isFollowing = userSnap.data()!['followers'].contains(currentUserUid);
       setState(() {});
     } catch (e) {
@@ -66,9 +67,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return isLoading
-        ? const Center(
-            child: CircularProgressIndicator(),
-          )
+        ? const Center(child: CircularProgressIndicator())
         : Scaffold(
             appBar: AppBar(
               backgroundColor: mobileBackgroundColor,
@@ -98,8 +97,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                   children: [
                                     StatColumnWidget(num: postLen, label: "posts"),
-                                    StatColumnWidget(num: followers, label: "followers"),
-                                    StatColumnWidget(num: following, label: "following"),
+                                    FollowWidget(followers: followers, text: "Followers"),
+                                    FollowWidget(followers: following, text: "Following"),
                                   ],
                                 ),
                                 Row(
@@ -133,7 +132,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                                   );
                                                   setState(() {
                                                     isFollowing = false;
-                                                    followers--;
+                                                    followers.length--;
                                                   });
                                                 },
                                               )
@@ -149,7 +148,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                                   );
                                                   setState(() {
                                                     isFollowing = true;
-                                                    followers++;
+                                                    followers.length++;
                                                   });
                                                 },
                                               )
@@ -181,6 +180,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ],
             ),
           );
+  }
+}
+
+class FollowWidget extends StatelessWidget {
+  const FollowWidget({
+    Key? key,
+    required this.followers,
+    required this.text,
+  }) : super(key: key);
+
+  final List followers;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) {
+              return UsersListWidget(
+                rawUsers: followers.isNotEmpty
+                    ? FirebaseFirestore.instance
+                        .collection("users")
+                        .where("uid", whereIn: followers)
+                        .get()
+                    : FirebaseFirestore.instance
+                        .collection("users")
+                        .where("uid", isEqualTo: "")
+                        .get(),
+                headerText: text,
+              );
+            },
+          ),
+        );
+      },
+      child: StatColumnWidget(num: followers.length, label: text.toLowerCase()),
+    );
   }
 }
 
@@ -249,10 +287,7 @@ class StatColumnWidget extends StatelessWidget {
       children: [
         Text(
           num.toString(),
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         Container(
           margin: const EdgeInsets.only(top: 4),

@@ -5,6 +5,7 @@ import 'package:instagram_flutter/screens/post_screen.dart';
 import 'package:instagram_flutter/screens/profile_screen.dart';
 import 'package:instagram_flutter/utils/colors.dart';
 import 'package:instagram_flutter/utils/global_variable.dart';
+import 'package:instagram_flutter/widgets/users_list_widget.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({Key? key}) : super(key: key);
@@ -41,7 +42,14 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
       ),
       body: isShowUsers
-          ? SearchUserWidget(searchController: searchController)
+          //? SearchUserWidget(searchController: searchController)
+          ? UsersListWidget(
+              searchController: searchController,
+              rawUsers: FirebaseFirestore.instance
+                  .collection('users')
+                  .where('username', isGreaterThanOrEqualTo: searchController.text)
+                  .get(),
+            )
           : const ImageGridWidget(),
     );
   }
@@ -86,53 +94,6 @@ class ImageGridWidget extends StatelessWidget {
               : StaggeredTile.count((index % 7 == 0) ? 2 : 1, (index % 7 == 0) ? 2 : 1),
           mainAxisSpacing: 5.0,
           crossAxisSpacing: 5.0,
-        );
-      },
-    );
-  }
-}
-
-class SearchUserWidget extends StatelessWidget {
-  const SearchUserWidget({
-    Key? key,
-    required this.searchController,
-  }) : super(key: key);
-
-  final TextEditingController searchController;
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder(
-      future: FirebaseFirestore.instance
-          .collection('users')
-          .where('username', isGreaterThanOrEqualTo: searchController.text)
-          .get(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        var users = snapshot.data! as dynamic;
-        return ListView.builder(
-          // shrinkWrap: true,
-          itemCount: users.docs.length,
-          itemBuilder: (context, index) {
-            return InkWell(
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => ProfileScreen(
-                    uid: (snapshot.data! as dynamic).docs[index]['uid'],
-                  ),
-                ),
-              ),
-              child: ListTile(
-                leading: CircleAvatar(
-                  backgroundImage: NetworkImage(users.docs[index]['photoUrl']),
-                  radius: 16,
-                ),
-                title: Text(users.docs[index]['username']),
-              ),
-            );
-          },
         );
       },
     );

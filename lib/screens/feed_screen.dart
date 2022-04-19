@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:instagram_flutter/resources/auth_methods.dart';
 import 'package:instagram_flutter/screens/login_screen.dart';
@@ -8,8 +9,15 @@ import 'package:instagram_flutter/utils/global_variable.dart';
 import 'package:instagram_flutter/utils/images.dart';
 import 'package:instagram_flutter/widgets/post_card.dart';
 
-class FeedScreen extends StatelessWidget {
+class FeedScreen extends StatefulWidget {
   const FeedScreen({Key? key}) : super(key: key);
+
+  @override
+  State<FeedScreen> createState() => _FeedScreenState();
+}
+
+class _FeedScreenState extends State<FeedScreen> {
+  final ScrollController _scrollController = ScrollController();
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +31,18 @@ class FeedScreen extends StatelessWidget {
               centerTitle: false,
               elevation: 1,
               shadowColor: Colors.white30,
-              title: SvgPicture.asset(logo, color: primaryColor, height: 32),
+              title: GestureDetector(
+                  onTap: () async {
+                    await Future.delayed(const Duration(milliseconds: 300));
+                    SchedulerBinding.instance?.addPostFrameCallback((_) {
+                      _scrollController.animateTo(
+                        0.0,
+                        duration: const Duration(milliseconds: 400),
+                        curve: Curves.fastOutSlowIn,
+                      );
+                    });
+                  },
+                  child: SvgPicture.asset(logo, color: primaryColor, height: 32)),
               actions: [
                 IconButton(
                   onPressed: () {
@@ -48,6 +67,7 @@ class FeedScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           return ListView.builder(
+            controller: _scrollController,
             itemCount: snapshot.data!.docs.length,
             itemBuilder: (context, index) => Container(
               margin: EdgeInsets.symmetric(
@@ -55,7 +75,7 @@ class FeedScreen extends StatelessWidget {
                 vertical: width > webScreenSize ? 15 : 0,
               ),
               child: PostCard(
-                snap: snapshot.data!.docs[index].data(),
+                post: snapshot.data!.docs[index].data(),
               ),
             ),
           );

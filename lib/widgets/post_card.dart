@@ -15,9 +15,9 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 class PostCard extends StatelessWidget {
-  final snap;
+  final post;
 
-  const PostCard({Key? key, required this.snap}) : super(key: key);
+  const PostCard({Key? key, required this.post}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -31,10 +31,10 @@ class PostCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          HeaderSectionWidget(snap: snap),
-          ImageWidget(snap: snap),
-          BorderSectionWidget(snap: snap),
-          DescriptionWidget(snap: snap),
+          HeaderSectionWidget(post: post),
+          ImageWidget(post: post),
+          BorderSectionWidget(post: post),
+          DescriptionWidget(post: post),
         ],
       ),
     );
@@ -42,11 +42,11 @@ class PostCard extends StatelessWidget {
 }
 
 class HeaderSectionWidget extends StatefulWidget {
-  final snap;
+  final post;
 
   const HeaderSectionWidget({
     Key? key,
-    required this.snap,
+    required this.post,
   }) : super(key: key);
 
   @override
@@ -64,7 +64,7 @@ class _HeaderSectionWidgetState extends State<HeaderSectionWidget> {
         children: [
           CircleAvatar(
             radius: 16,
-            backgroundImage: NetworkImage(widget.snap['profImage']),
+            backgroundImage: NetworkImage(widget.post['profImage']),
           ),
           Expanded(
             child: Padding(
@@ -74,14 +74,14 @@ class _HeaderSectionWidgetState extends State<HeaderSectionWidget> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    widget.snap['username'],
+                    widget.post['username'],
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
             ),
           ),
-          widget.snap['uid'].toString() == user.uid
+          widget.post['uid'].toString() == user.uid
               ? IconButton(
                   onPressed: () {
                     showDialog(
@@ -93,7 +93,7 @@ class _HeaderSectionWidgetState extends State<HeaderSectionWidget> {
                           children: [
                             DialogButton(
                               onTap: () async {
-                                FirestoreMethods().deletePost(widget.snap['postId']);
+                                FirestoreMethods().deletePost(widget.post['postId']);
                                 Navigator.of(context).pop();
                               },
                               text: 'Delete',
@@ -113,9 +113,9 @@ class _HeaderSectionWidgetState extends State<HeaderSectionWidget> {
 }
 
 class ImageWidget extends StatefulWidget {
-  final snap;
+  final post;
 
-  const ImageWidget({Key? key, required this.snap}) : super(key: key);
+  const ImageWidget({Key? key, required this.post}) : super(key: key);
 
   @override
   State<ImageWidget> createState() => _ImageWidgetState();
@@ -131,9 +131,9 @@ class _ImageWidgetState extends State<ImageWidget> {
     return GestureDetector(
       onDoubleTap: () {
         FirestoreMethods().likePost(
-          widget.snap['postId'].toString(),
+          widget.post['postId'].toString(),
           user.uid,
-          widget.snap['likes'],
+          widget.post['likes'],
         );
         setState(() => isLikeAnimating = true);
       },
@@ -143,7 +143,7 @@ class _ImageWidgetState extends State<ImageWidget> {
           SizedBox(
             height: MediaQuery.of(context).size.height * 0.5,
             width: double.infinity,
-            child: Image.network(widget.snap['postUrl'], fit: BoxFit.cover),
+            child: Image.network(widget.post['postUrl'], fit: BoxFit.cover),
           ),
           AnimatedOpacity(
             duration: const Duration(milliseconds: 200),
@@ -163,10 +163,64 @@ class _ImageWidgetState extends State<ImageWidget> {
   }
 }
 
-class DescriptionWidget extends StatefulWidget {
-  final snap;
+class BorderSectionWidget extends StatefulWidget {
+  final post;
 
-  const DescriptionWidget({Key? key, required this.snap}) : super(key: key);
+  const BorderSectionWidget({Key? key, required this.post}) : super(key: key);
+
+  @override
+  State<BorderSectionWidget> createState() => _BorderSectionWidgetState();
+}
+
+class _BorderSectionWidgetState extends State<BorderSectionWidget> {
+  @override
+  Widget build(BuildContext context) {
+    final User user = Provider.of<UserProvider>(context).getUser;
+
+    return Row(
+      children: [
+        LikeAnimation(
+          isAnimating: widget.post['likes'].contains(user.uid),
+          smallLike: true,
+          child: IconButton(
+            icon: widget.post['likes'].contains(user.uid)
+                ? const Icon(Icons.favorite, color: Colors.red)
+                : const Icon(Icons.favorite_border),
+            onPressed: () => FirestoreMethods().likePost(
+              widget.post['postId'],
+              user.uid,
+              widget.post['likes'],
+            ),
+          ),
+        ),
+        IconButton(
+          onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+            builder: (context) => CommentsScreen(postId: widget.post['postId'].toString()),
+          )),
+          icon: const Icon(Icons.comment_outlined),
+        ),
+        IconButton(
+          onPressed: () {},
+          icon: const Icon(Icons.send),
+        ),
+        Expanded(
+          child: Align(
+            alignment: Alignment.bottomRight,
+            child: IconButton(
+              onPressed: () {},
+              icon: const Icon(Icons.bookmark_border),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class DescriptionWidget extends StatefulWidget {
+  final post;
+
+  const DescriptionWidget({Key? key, required this.post}) : super(key: key);
 
   @override
   State<DescriptionWidget> createState() => _DescriptionWidgetState();
@@ -185,7 +239,7 @@ class _DescriptionWidgetState extends State<DescriptionWidget> {
     try {
       QuerySnapshot snap = await FirebaseFirestore.instance
           .collection('posts')
-          .doc(widget.snap['postId'])
+          .doc(widget.post['postId'])
           .collection('comments')
           .get();
       commentLen = snap.docs.length;
@@ -208,7 +262,7 @@ class _DescriptionWidgetState extends State<DescriptionWidget> {
                   fontWeight: FontWeight.w800,
                 ),
             child: Text(
-              "${widget.snap['likes'].length} likes",
+              "${widget.post['likes'].length} likes",
               style: Theme.of(context).textTheme.bodyText2,
             ),
           ),
@@ -220,10 +274,10 @@ class _DescriptionWidgetState extends State<DescriptionWidget> {
                 style: const TextStyle(color: primaryColor),
                 children: [
                   TextSpan(
-                    text: widget.snap['username'],
+                    text: widget.post['username'],
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  TextSpan(text: " ${widget.snap['description']}"),
+                  TextSpan(text: " ${widget.post['description']}"),
                 ],
               ),
             ),
@@ -231,7 +285,7 @@ class _DescriptionWidgetState extends State<DescriptionWidget> {
           InkWell(
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (context) => CommentsScreen(postId: widget.snap['postId'].toString()),
+                builder: (context) => CommentsScreen(postId: widget.post['postId'].toString()),
               ),
             ),
             child: Container(
@@ -245,66 +299,12 @@ class _DescriptionWidgetState extends State<DescriptionWidget> {
           Container(
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Text(
-              DateFormat.yMMMd().format(widget.snap['datePublished'].toDate()),
+              DateFormat.yMMMd().format(widget.post['datePublished'].toDate()),
               style: const TextStyle(fontSize: 12, color: secondaryColor),
             ),
           ),
         ],
       ),
-    );
-  }
-}
-
-class BorderSectionWidget extends StatefulWidget {
-  final snap;
-
-  const BorderSectionWidget({Key? key, required this.snap}) : super(key: key);
-
-  @override
-  State<BorderSectionWidget> createState() => _BorderSectionWidgetState();
-}
-
-class _BorderSectionWidgetState extends State<BorderSectionWidget> {
-  @override
-  Widget build(BuildContext context) {
-    final User user = Provider.of<UserProvider>(context).getUser;
-
-    return Row(
-      children: [
-        LikeAnimation(
-          isAnimating: widget.snap['likes'].contains(user.uid),
-          smallLike: true,
-          child: IconButton(
-            icon: widget.snap['likes'].contains(user.uid)
-                ? const Icon(Icons.favorite, color: Colors.red)
-                : const Icon(Icons.favorite_border),
-            onPressed: () => FirestoreMethods().likePost(
-              widget.snap['postId'],
-              user.uid,
-              widget.snap['likes'],
-            ),
-          ),
-        ),
-        IconButton(
-          onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-            builder: (context) => CommentsScreen(postId: widget.snap['postId'].toString()),
-          )),
-          icon: const Icon(Icons.comment_outlined),
-        ),
-        IconButton(
-          onPressed: () {},
-          icon: const Icon(Icons.send),
-        ),
-        Expanded(
-          child: Align(
-            alignment: Alignment.bottomRight,
-            child: IconButton(
-              onPressed: () {},
-              icon: const Icon(Icons.bookmark_border),
-            ),
-          ),
-        ),
-      ],
     );
   }
 }
